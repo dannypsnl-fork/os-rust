@@ -3,11 +3,14 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
+#![feature(abi_x86_interrupt)]
 
+mod interrupts;
 mod serial;
 mod vga_buffer;
 
 use core::panic::PanicInfo;
+use x86_64;
 
 /// This function is called on panic.
 #[cfg(not(test))]
@@ -16,6 +19,31 @@ fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
     loop {}
 }
+
+#[cfg(not(test))]
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
+    println!("Hello World{}", "!");
+
+    init();
+    x86_64::instructions::interrupts::int3(); // new
+
+    loop {}
+}
+
+pub fn init() {
+    interrupts::init_idt();
+}
+
+// Tests
+#[cfg(test)]
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
+    init(); // new
+    test_main();
+    loop {}
+}
+
 // panic handler in test mode
 #[cfg(test)]
 #[panic_handler]
@@ -26,17 +54,12 @@ fn panic(info: &PanicInfo) -> ! {
     loop {}
 }
 
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
-    println!("Hello World{}", "!");
-
-    #[cfg(test)]
-    test_main();
-
-    loop {}
+#[test_case]
+fn test_breakpoint_exception() {
+    // invoke a breakpoint exception
+    x86_64::instructions::interrupts::int3();
 }
 
-// Tests
 #[test_case]
 fn trivial_assertion() {
     assert_eq!(1, 1);
