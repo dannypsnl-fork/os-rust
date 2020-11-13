@@ -5,13 +5,19 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
 
+use core::panic::PanicInfo;
+use x86_64;
 mod gdt;
 mod interrupts;
 mod serial;
 mod vga_buffer;
 
-use core::panic::PanicInfo;
-use x86_64;
+pub fn init() {
+    gdt::init();
+    interrupts::init_idt();
+    unsafe { interrupts::PICS.lock().initialize() };
+    x86_64::instructions::interrupts::enable();
+}
 
 /// This function is called on panic.
 #[cfg(not(test))]
@@ -28,17 +34,9 @@ pub extern "C" fn _start() -> ! {
 
     init();
 
-    fn stack_overflow() {
-        stack_overflow(); // for each recursion, the return address is pushed
+    loop {
+        print!("-");
     }
-    stack_overflow();
-
-    loop {}
-}
-
-pub fn init() {
-    gdt::init();
-    interrupts::init_idt();
 }
 
 // Tests
