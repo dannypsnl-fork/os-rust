@@ -19,24 +19,27 @@ pub fn init() {
     x86_64::instructions::interrupts::enable();
 }
 
+pub fn hlt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt();
+    }
+}
+
 /// This function is called on panic.
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(not(test))]
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    println!("Hello World{}", "!");
-
+    println!("starting...");
     init();
-
-    loop {
-        print!("-");
-    }
+    println!("init [ok]");
+    hlt_loop();
 }
 
 // Tests
@@ -45,7 +48,7 @@ pub extern "C" fn _start() -> ! {
 pub extern "C" fn _start() -> ! {
     init(); // new
     test_main();
-    loop {}
+    hlt_loop();
 }
 
 // panic handler in test mode
@@ -55,7 +58,7 @@ fn panic(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    hlt_loop();
 }
 
 #[test_case]
