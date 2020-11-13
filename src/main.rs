@@ -5,6 +5,7 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
 
+mod gdt;
 mod interrupts;
 mod serial;
 mod vga_buffer;
@@ -26,12 +27,17 @@ pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
 
     init();
-    x86_64::instructions::interrupts::int3(); // new
+
+    fn stack_overflow() {
+        stack_overflow(); // for each recursion, the return address is pushed
+    }
+    stack_overflow();
 
     loop {}
 }
 
 pub fn init() {
+    gdt::init();
     interrupts::init_idt();
 }
 
