@@ -12,6 +12,27 @@ mod interrupts;
 mod serial;
 mod vga_buffer;
 
+#[cfg(not(test))]
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
+    println!("starting...");
+    init();
+    println!("init [ok]");
+
+    // occur page fault
+    let ptr = 0x2031b2 as *mut u32;
+    unsafe {
+        let x = *ptr;
+    }
+    println!("read worked");
+    unsafe {
+        *ptr = 42;
+    }
+    println!("write worked");
+
+    hlt_loop();
+}
+
 pub fn init() {
     gdt::init();
     interrupts::init_idt();
@@ -30,15 +51,6 @@ pub fn hlt_loop() -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    hlt_loop();
-}
-
-#[cfg(not(test))]
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
-    println!("starting...");
-    init();
-    println!("init [ok]");
     hlt_loop();
 }
 
