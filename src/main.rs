@@ -4,6 +4,7 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
+#![feature(const_in_array_repeat_expressions)]
 #![feature(const_mut_refs)]
 #![feature(alloc_error_handler)]
 
@@ -96,7 +97,7 @@ fn panic(info: &PanicInfo) -> ! {
 // Tests
 #[cfg(test)]
 fn test_kernel_main(boot_info: &'static BootInfo) -> ! {
-    use memory::{self, BootInfoFrameAllocator};
+    use memory::BootInfoFrameAllocator;
     use x86_64::VirtAddr;
 
     init();
@@ -106,7 +107,6 @@ fn test_kernel_main(boot_info: &'static BootInfo) -> ! {
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
     test_main();
-    loop {}
 
     hlt_loop();
 }
